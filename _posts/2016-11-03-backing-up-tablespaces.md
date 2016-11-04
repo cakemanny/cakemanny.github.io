@@ -77,7 +77,6 @@ somewhere
 :: somehow tell MySQL to UNLOCK TABLES... - we'll improve later
 taskkill /IM mysql.exe
 call setvar1.cmd
-subst S: %SHADOW_DEVICE_1%
 copy %SHADOW_DEVICE_1%\%datadir%\dbname\tableA.cfg %backupdir%\.
 copy %SHADOW_DEVICE_1%\%datadir%\dbname\tableA.ibd %backupdir%\.
 
