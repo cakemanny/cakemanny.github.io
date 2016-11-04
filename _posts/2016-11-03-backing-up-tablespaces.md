@@ -30,18 +30,24 @@ mysql> FLUSH TABLES `tableA`,`tableB` FOR EXPORT;
 ```
 This forces dirty pages in the named tables to disk and creates a tableA.cfg
 file alongside your tableA.ibd
+
 ```
 macOS $ cp $datadir/dbname/tableA.{cfg,ibd} $backupdir/.
 win32> copy %datadir%\dbname\tableA.cfg %datadir%\dbname\tableA.ibd %backupdir%\.
 ```
+
 We also need definitions of the tables which match exactly:
+
 ```
 $ mysqldump --routines --events --no-data --result-file=$backupdir/dbname.defs.sql
 ```
+
 Now we can tell MySQL we are done
+
 ```
 mysql> UNLOCK TABLES;
 ```
+
 **NB:** Using the `--master-data` option will leave the mysqldump deadlocked
 with your flush tables lock, so avoid that one.
 
@@ -65,6 +71,7 @@ VShadow can run a bat file while a temporary snapshot exists.
 
 Suppose you have a `mysql -e"flush tables...for export;do sleep(1000000)"` running
 somewhere
+
 ```
 > type backupshadow.cmd
 :: somehow tell MySQL to UNLOCK TABLES... - we'll improve later
@@ -94,24 +101,31 @@ Restoring
 ---------
 Couldn't be simpler! We need to create the tables with identical table
 definition, discard the created tablespace and import the backup.
+
 ```
 $ mysqladmin create restore_db
 $ mysql restore_db < dbname.defs.sql
 ```
+
 ```
 mysql> use restore_db
 mysql> alter table `tableA` discard tablespace;
 ```
+
 You may need to correct permissions after copying the files in.
+
 ```
 $ cp $backupdir/tableA.{cfg,ibd} $datadir/restore_db
 $ chown -R _mysql $datadir/restore_db
 $ chmod -R 600 $datadir/restore_db
 ```
+
 ```
 mysql> alter table `tableA` import tablespace;
 ```
+
 A log message is written to indicate that we were successful:
+
 ```
 $ tail $datadir/testhost.err
 2016-11-03 18:25:20 3251 [Note] InnoDB: Importing tablespace for table 'dbname/tableA' that was exported from host 'testhost'
@@ -123,9 +137,9 @@ $ tail $datadir/testhost.err
 ```
 
 Obviously there are some considerations.
-* You most likely have more than one or two tables in your database
-* MySQL data files are not simply named if characters outside [A-Za-z0-9_] are
-  used
+ * You most likely have more than one or two tables in your database
+ * MySQL data files are not simply named if characters outside [A-Za-z0-9_] are
+   used
 
 I will shortly upload some python scripts that do all of this in one fell swoop.
 
