@@ -137,9 +137,9 @@ $ tail $datadir/testhost.err
 ```
 
 Obviously there are some considerations.
- * You most likely have more than one or two tables in your database
- * MySQL data files are not simply named if characters outside [A-Za-z0-9_] are
-   used
+
+- You most likely have more than one or two tables in your database
+- MySQL data files are not simply named if characters outside [A-Za-z0-9_] are used
 
 I will shortly upload some python scripts that do all of this in one fell swoop.
 
