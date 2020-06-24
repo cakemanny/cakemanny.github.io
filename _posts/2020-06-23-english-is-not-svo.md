@@ -48,8 +48,8 @@ What about when talking about a family member?
     Adv    Verb     Prep Phrase  Subject
 
 … probably doesn't count.
-Parses more like {{always {shouting {at {the telly}}}} {my dad}} to me.
-Equivalent to the structure {{massive racist} {my dad}}.
+Parses more like \[\[always \[shouting \[at \[the telly\]\]\]\] \[my dad\]\] to me.
+Equivalent to the structure \[\[massive racist\] \[my dad\]\].
 
 What about?
 
