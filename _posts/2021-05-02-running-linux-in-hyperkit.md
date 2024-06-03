@@ -77,7 +77,7 @@ dr-xr-xr-x  2 0      0        2048 14 Apr 12:31 boot/syslinux
 
 Extract the files we are after
 ```
-% tar -tvf alpine-virt-*.iso boot/vmlinuz-virt boot/initramfs-virt
+% tar -xvf alpine-virt-*.iso boot/vmlinuz-virt boot/initramfs-virt
 x boot/initramfs-virt
 x boot/vmlinuz-virt
 ```
