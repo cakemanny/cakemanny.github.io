@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "OOM Killer: Creating our own CGroups"
-date: 2024-06-25
+date: 2024-06-15
 ---
 
 Last time, when [triggering the OOM Killer][1], we were a bit silent
