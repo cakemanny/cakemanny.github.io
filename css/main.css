@@ -43,7 +43,7 @@ ul.posts li {
 }
 
 .highlighter-rouge {
-  background-color: lightyellow;
+    background-color: lightyellow;
 }
 /*.highlight {
 /*  background-color: lightyellow;
@@ -51,3 +51,12 @@ ul.posts li {
 */
 
 
+/* Post date */
+p.meta {
+    font-style: italic;
+}
+
+pre.highlight {
+    /* Stop code samples going over right hand edge of the 'pre' */
+    overflow: auto;
+}
