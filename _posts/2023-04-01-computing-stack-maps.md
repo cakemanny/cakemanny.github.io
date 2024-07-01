@@ -92,22 +92,22 @@ address.
 
 ```
 : ...            :          ---->       : ...            :
-+----------------+           ·+         +----------------+           ·+    
-| main caller RA |            :         | main caller RA |            :    
-+----------------+                      +----------------+                 
-| saved FP       |            main      | saved FP       |            main 
-+----------------+                      +----------------+                 
-| spilled regs   |            :         | spilled regs   |            :    
-| in main ...    |            :         | in main ...    |            :    
-+----------------+           ·+         +----------------+           ·+    
-| return addr    |  8         :         | return addr    |  8         :    
-+----------------+            :         +----------------+            :    
-| saved FP       |  0                   | saved FP       |  0              
-+----------------+            f         +----------------+            f    
-| space for a    | -8                  *| a = 0x1234...  | -8              
-+----------------+            :         +----------------+            :    
-| space for b    | -16        :         | space for b    | -16        :    
-+----------------+           ·+         +----------------+           ·+    
++----------------+           ·+         +----------------+           ·+
+| main caller RA |            :         | main caller RA |            :
++----------------+                      +----------------+
+| saved FP       |            main      | saved FP       |            main
++----------------+                      +----------------+
+| spilled regs   |            :         | spilled regs   |            :
+| in main ...    |            :         | in main ...    |            :
++----------------+           ·+         +----------------+           ·+
+| return addr    |  8         :         | return addr    |  8         :
++----------------+            :         +----------------+            :
+| saved FP       |  0                   | saved FP       |  0
++----------------+            f         +----------------+            f
+| space for a    | -8                  *| a = 0x1234...  | -8
++----------------+            :         +----------------+            :
+| space for b    | -16        :         | space for b    | -16        :
++----------------+           ·+         +----------------+           ·+
 ```
 
 After executing the second line, `let b: *Pt = new Pt {3, 4};`, the space
@@ -115,22 +115,22 @@ reserved for `b` now contains also contains a heap address:
 
 ```
 : ...            :          ---->       : ...            :
-+----------------+           ·+         +----------------+           ·+    
-| main caller RA |            :         | main caller RA |            :    
-+----------------+                      +----------------+                 
-| saved FP       |            main      | saved FP       |            main 
-+----------------+                      +----------------+                 
-| spilled regs   |            :         | spilled regs   |            :    
-| in main ...    |            :         | in main ...    |            :    
-+----------------+           ·+         +----------------+           ·+    
-| return addr    |  8         :         | return addr    |  8         :    
-+----------------+            :         +----------------+            :    
-| saved FP       |  0                   | saved FP       |  0              
-+----------------+            f         +----------------+            f    
-| a = 0x1234...  | -8                   | a = 0x1234...  | -8              
-+----------------+            :         +----------------+            :    
-| space for b    | -16        :        *| b = 0x5678...  | -16        :    
-+----------------+           ·+         +----------------+           ·+    
++----------------+           ·+         +----------------+           ·+
+| main caller RA |            :         | main caller RA |            :
++----------------+                      +----------------+
+| saved FP       |            main      | saved FP       |            main
++----------------+                      +----------------+
+| spilled regs   |            :         | spilled regs   |            :
+| in main ...    |            :         | in main ...    |            :
++----------------+           ·+         +----------------+           ·+
+| return addr    |  8         :         | return addr    |  8         :
++----------------+            :         +----------------+            :
+| saved FP       |  0                   | saved FP       |  0
++----------------+            f         +----------------+            f
+| a = 0x1234...  | -8                   | a = 0x1234...  | -8
++----------------+            :         +----------------+            :
+| space for b    | -16        :        *| b = 0x5678...  | -16        :
++----------------+           ·+         +----------------+           ·+
 ```
 
 After returning to main the content of the stack stay the same, we just
@@ -138,11 +138,11 @@ have a view shift. i.e. the frame and stack pointers are restored
 and now point at main's frame.
 ```
 : ...            :          ---->       : ...            :
-+----------------+           ·+         +----------------+           ·+      
++----------------+           ·+         +----------------+           ·+
 | main caller RA |            :         | main caller RA |  8         :
-+----------------+                      +----------------+             
++----------------+                      +----------------+
 | saved FP       |            main      | main caller FP |  0         main
-+----------------+                      +----------------+             
++----------------+                      +----------------+
 | spilled regs   |            :         | spilled regs   |            :
 | in main ...    |            :         | in main ...    | -16 SP     :
 +----------------+           ·+         +----------------+           ·+
@@ -160,22 +160,22 @@ After entering `g`, we see that the space reserved for `c` and `d` is still
 populated with the addresses that were used for `a` and `b`
 ```
 : ...            :          ---->       : ...            :
-+----------------+           ·+         +----------------+           ·+     
-| main caller RA |  8         :         | main caller RA |            :     
-+----------------+                      +----------------+                  
-| main caller FP |  0         main      | main caller FP |            main 
-+----------------+                      +----------------+                  
-| spilled regs   |            :         | spilled regs   |            :     
-| in main ...    | -16 SP     :         | in main ...    |            :     
-+----------------+           ·+         +----------------+           ·+     
-| RA for f call  |                     *| return addr    |  8         :     
-+----------------+                      +----------------+            :     
-| FP from f call |                     *| saved FP       |  0               
-+----------------+                      +----------------+            g     
-| 0x1234...      |                      | c = 0x1234...  | -8               
-+----------------+                      +----------------+            :     
-| 0x5678...      |                      | d = 0x5678...  | -16        :     
-+----------------+                      +----------------+           ·+       
++----------------+           ·+         +----------------+           ·+
+| main caller RA |  8         :         | main caller RA |            :
++----------------+                      +----------------+
+| main caller FP |  0         main      | main caller FP |            main
++----------------+                      +----------------+
+| spilled regs   |            :         | spilled regs   |            :
+| in main ...    | -16 SP     :         | in main ...    |            :
++----------------+           ·+         +----------------+           ·+
+| RA for f call  |                     *| return addr    |  8         :
++----------------+                      +----------------+            :
+| FP from f call |                     *| saved FP       |  0
++----------------+                      +----------------+            g
+| 0x1234...      |                      | c = 0x1234...  | -8
++----------------+                      +----------------+            :
+| 0x5678...      |                      | d = 0x5678...  | -16        :
++----------------+                      +----------------+           ·+
 ```
 
 when we come to calculate our stack maps, we must tell the garbarge collector
@@ -300,8 +300,8 @@ We can follow the evolution of our scope chain as we analyse function `f`.
 +----------------+             +----------------+            +----------------+
 | f, g, main, Pt |             | f, g, main, Pt |            | f, g, main, Pt |
 +----------------+             +----------------+            +----------------+
-        |                              |                             | 
-        v                              v                             v 
+        |                              |                             |
+        v                              v                             v
 +----------------+             +----------------+            +----------------+
 |                |             |       a        |            |    a     b     |
 +----------------+             +----------------+            +----------------+
@@ -310,7 +310,7 @@ We can follow the evolution of our scope chain as we analyse function `f`.
 We can ignore the root scope which contains all the function, type and global
 variable definitions as these will not live on the stack.
 
-At _gc-point_ 1 there are no _defined-variables_, at _gc-point_ 2 only `a`
+At _gc-point_ 1 there are no _defined-variables_ and at _gc-point_ 2 only `a`
 has come into scope.
 
 
@@ -355,14 +355,169 @@ Body([
 ```
 
 
-<!-- 
+<!--
 
 describe how we built a table of the variables and their
-offsets in the stack 
+offsets in the stack
+
+Note that this would mostly be eliminated if we did escape analysis and
+assigned variable to registers
+- caveats - greater than word sized values, escaping variables
 
 and then that we use their pointer disposition (i.e. a pointer map for the
 type) to built a general pointer bitmap
 and how we can clear the bitmap for slots that are not defined.
 
+we can note that we do this during translation to the IR, so that we don't
+need to attach the maps to the AST, but only to the IR - and only to calls
+
+Note a caveat about rewrite stages?
+    - rewrite stage temporaries will no longer be live... right? assuming
+      they generate no function call and do not allocate
+
+Note how
+
+We can leave them hanging about the details of register spilling.
+
+
+Parse -> Semantic Analysis -> Frame Layout -> Translation to IR
+-> Instruction Selection ->
+-> Control Flow Analysis -> Liveness Analysis -> Register Allocation
+-> Assembly Emission
+
+end of comment
 -->
+
+
+When way create the layout of the activation record, we use
+the type information to store a pointer map relating to each variable
+in the frame.
+
+```
++-------+------+-----------+----+--------+-------------+
+| name  | size | alignment | id | offset | pointer map |
++-------+------+-----------+----+--------+-------------+
+| a     |    8 |         8 |  4 |     -8 |  0b00...001 |
++-------+------+-----------+----+--------+-------------+
+| b     |    8 |         8 |  5 |    -16 |  0b00...001 |
++-------+------+-----------+----+--------+-------------+
+```
+
+We delay generation of the frame map for each gc-point until we translate
+the AST into the IR (intermediate representation), this saves us needing to
+store the _defined-vars_ on each CALL instruction in the IR but also saves
+the need for attaching the pointer map to the AST node. (It may be possible
+to delay this even until instruction selection.)
+
+The pointer maps for all defined variables are combined together when
+translating the call/new expression to create a _locals bitmap_ for the
+local variables area of the frame.
+
+We've elided it here, but there may also be arguments passed on the stack.
+In this case, an _arguments bitmap_ for the area north of the frame pointer
+will also be created.
+
+```
++----------------+                                  ·+
+| return addr    |  8                                :
++----------------+                                   :
+| saved FP       |  0
++----------------+                                   f
+| space for a    | -8 <-------------+-----------+
++----------------+                  |           |    :
+| space for b    | -16 <------------|+----------|+   :
++----------------+                  ||          ||  ·+
+                                    ||          ||
+                                    ||          ||
+            locals bitmap:  0b00000000  0b00000010
+                            gc-point 1  gc-point 2
+```
+
+
+<!--
+
+    talk about the saving of the frame maps, with their instruction
+-->
+
+During instruction selection, we emit a label after each function call.
+In the final assembly it looks like these shown additions. `sl_alloc_des` is
+our allocation function. `Lret4` labels the `mov` instruction directly after
+the first call to `sl_alloc_des` and `Lret5` the `mov` instruction directly
+after the second.
+
+```diff
+ 	.globl	_f
+ 	.p2align	2
+ _f:
+ 	.cfi_startproc
+ 	stp	x29, x30, [sp, #-16]!
+ 	mov	fp, sp
+ 	.cfi_def_cfa w29, 16
+ 	.cfi_offset w30, -8
+ 	.cfi_offset w29, -16
+ 	sub	sp, sp, #16
+ L3:
+ 	adrp	x0, L1@PAGE
+ 	add	x0, x0, L1@PAGEOFF
+ 	bl	_sl_alloc_des
++Lret4:
+ 	mov	w1, #1
+ 	str	w1, [x0]
+ 	mov	w1, #2
+ 	str	w1, [x0, #4]
+ 	str	x0, [fp, #-8]
+ 	adrp	x0, L1@PAGE
+ 	add	x0, x0, L1@PAGEOFF
+ 	bl	_sl_alloc_des
++Lret5:
+ 	mov	w1, #3
+ 	str	w1, [x0]
+ 	mov	w1, #4
+ 	str	w1, [x0, #4]
+ 	str	x0, [fp, #-16]
+ 	ldr	x0, [fp, #-8]
+ 	ldr	w1, [x0]
+ 	ldr	x0, [fp, #-16]
+ 	ldr	w0, [x0, #4]
+ 	add	w0, w1, w0
+ L2:
+
+ 	add	sp, sp, #16
+ 	ldp	x29, x30, [sp], #16
+ 	ret
+ 	.cfi_endproc
+```
+
+We store those labels along with the frame maps as fragments that get emitted
+after the code in the data segment.
+
+The maps are linked together and given a well-known name for the GC to find.
+For `f` alone, this could look something like the following.
+Fields related to details we'll talk about next time have been omitted.
+
+```
+	.section	__DATA,__const
+	.p2align	3
+Lptrmap0:
+	.quad	0	; previous
+	.quad	Lret5	; return address - the key
+	.short	2	; number of stack args + 2
+	.short	2	; length of locals space
+	.zero	4
+	.quad	0	; arg bitmap
+	.quad	2	; locals bitmap     ; 0b00000010 for gc-point 2
+	.p2align	3
+Lptrmap1:
+	.quad	Lptrmap0	; previous
+	.quad	Lret4	; return address - the key
+	.short	2	; number of stack args + 2
+	.short	2	; length of locals space
+	.zero	4
+	.quad	0	; arg bitmap
+	.quad	0	; locals bitmap     ; 0b00000000 for gc-point 1
+	.globl	_sl_rt_frame_maps
+	.p2align	3
+_sl_rt_frame_maps:
+	.quad	Lptrmap1
+```
 
