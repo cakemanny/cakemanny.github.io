@@ -1,0 +1,39 @@
+
+// https://pikchr.org/home/pikchrshow
+
+// Penultimate frame
+boxht = 0.35
+boxwid = 0.75
+down
+box "main caller RA" fill lightgrey
+box "main caller FP" same
+box "spilled regs " "in main ..." same
+box "return addr" fill lightyellow
+box "saved FP" same
+box "c = 0xcccc" same
+box "d = 0x5678" same
+// One idea might be to colour the text of the changed box red. It seems
+// we have to separate the text and the box
+//box same
+//text "c = 0xcccc..." at previous color red
+//box with .start at previous box.end "d = 0x5678..." same
+
+text "8" with .w at 0 right of 4th box.e
+text "0 (FP)" with .w at 0 right of 5th box.e
+text "-8" with .w at 0 right of 6th box.e
+text "-16" with .w at 0 right of 7th box.e
+
+text "main" at 1 right of 2nd box color darkblue
+line from previous text.s down until even with 3rd box then left 0.1 thin
+line from previous text.n up until even with first box then left 0.1 thin
+
+text "g" at 1 right of 5th box color red
+line from previous text.s down until even with last box then 0.1 west thin
+line from previous text.n up until even with 4th box then 0.1 west thin
+
+// ...
+
+
+/// other options:
+// https://unix.stackexchange.com/questions/126630/creating-diagrams-in-ascii
+// https://github.com/tuanchauict/MonoSketch
