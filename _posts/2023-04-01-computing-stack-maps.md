@@ -43,8 +43,8 @@ during the execution of the program.
 
 After entering `main`, the stack contains the return address of the caller of
 main (some function in libc), the saved frame pointer of the caller
-and the saved value of the callee-saved `x19` register, so that `x19` is free
-to store the result of calling `f` while `g` is being called.
+and the saved value of the callee-saved `x19` register; the latter, so that
+`x19` is free to store the result of calling `f` while `g` is being called.
 ```
                     FP offset
 : ...            :
@@ -85,10 +85,10 @@ along with the current frame pointer (`FP`)
 
 The first line in `f`,
 `let a: *Pt = new Pt {1, 2};`,
-allocates a struct on the heap and assigns a pointer to it to `a`.
-
-After execution of this, the space saved for `a` is populated with a heap
-address.
+allocates a struct on the heap
+and assigns a pointer to it to the variable `a`.
+After execution of this,
+the space saved for `a` is populated with a heap address.
 
 ```
 : ...            :          ---->       : ...            :
@@ -110,8 +110,9 @@ address.
 +----------------+           ·+         +----------------+           ·+
 ```
 
-After executing the second line, `let b: *Pt = new Pt {3, 4};`, the space
-reserved for `b` now contains also contains a heap address:
+After executing the second line,
+`let b: *Pt = new Pt {3, 4};`,
+the space reserved for `b` now also contains a heap address.
 
 ```
 : ...            :          ---->       : ...            :
@@ -133,9 +134,12 @@ reserved for `b` now contains also contains a heap address:
 +----------------+           ·+         +----------------+           ·+
 ```
 
-After returning to main the content of the stack stay the same, we just
-have a view shift. i.e. the frame and stack pointers are restored
-and now point at main's frame.
+After returning to main,
+the contents of the stack stay the same,
+but we have a view shift
+i.e. the frame and stack pointers are restored
+and they now point at main's frame.
+
 ```
 : ...            :          ---->       : ...            :
 +----------------+           ·+         +----------------+           ·+
@@ -156,8 +160,10 @@ and now point at main's frame.
 +----------------+           ·+         +----------------+
 ```
 
-After entering `g`, we see that the space reserved for `c` and `d` is still
-populated with the addresses that were used for `a` and `b`
+After entering `g`, space has been reserved for `c` and `d`
+but we see that this space is still
+populated with values stored there during the execution of `f`,
+the addresses that were stored in `a` and `b`.
 ```
 : ...            :          ---->       : ...            :
 +----------------+           ·+         +----------------+           ·+
@@ -178,7 +184,10 @@ populated with the addresses that were used for `a` and `b`
 +----------------+                      +----------------+           ·+
 ```
 
-when we come to calculate our stack maps, we must tell the garbarge collector
+<!-- This is the important observation.
+These are valid addresses in within the heap.  ??
+-->
+When we come to calculate our stack maps, we must tell the garbage collector
 that there are no live pointers here at this time.
 
 After executing the line `let c: *Pt = new Pt {5, 6};` , the space allocated
@@ -227,18 +236,13 @@ in the spot reserved for `d` is overwritten.
 +----------------+           ·+         +----------------+           ·+
 ```
 
-The program will complete by dereferencing those heap addresses and
-adding together the values in the fields but for the sake of this article,
-that work can be all done in registers and so doesn't affect our stacks.
-(Actually, there are some interesting problems there but we'll come back
-to them in a future article).
-
-<!--
-
-I guess the plan for this article was to write about recording the defined
-(i.e. initialised) variable at each call and new.
-
--->
+The program will complete by dereferencing those heap addresses,
+adding together the values from the fields
+and then adding that to the result from `f`.
+For the sake of this article, however,
+that work can all be done in registers and so doesn't affect our stack frames.
+_Actually the spilled registers may be relevant
+ but we'll come back to them in a future article_.
 
 The main problem we want to focus on today is the one of how to tell the
 garbage collector what is junk and what is not.
@@ -255,11 +259,11 @@ Our approach? The first step is to keep a record of _defined-variables_ at
 each _gc-point_.
 
 _gc-points_ occur at every function call and every use of the `new` operator.
-Why is that? `new` allocates memory for a struct and so may require a
-collection to obtain some space on the heap and any function may also contain
-the use of `new`.
-It may be possible rule out calls to leaf functions that don't use `new` but
-let's not worry about that for now.
+Why is that? `new` allocates memory for a struct, and so may require a
+collection to free up some space on the heap, and any function may also
+contain uses of `new`.
+It may be possible rule out calls to leaf functions that don't use `new`
+but let's not worry about that for now.
 
 How do we define _defined-variables_?
 Luckily we already have one measure. Variable scoping rules.
@@ -269,19 +273,24 @@ collector.
 
 Let's go through our program and work out the _defined-variables_.
 
-`main` is rather simple. It has two `gc-points`, the calls to `f` and `g`, and
-no variables in scope at those points, so quite simple: no _defined-variables_.
+`main` is rather simple.
+It has two _gc-points_, the calls to `f` and to `g`,
+and no variables in scope at those points,
+so quite simple: no _defined-variables_.
 ```
 fn main() -> int {
     f() + g()
+//  ^-^   ^-^- gc-point 2
+//    \- gc-point 1
 }
 ```
-<!-- TODO: come back and annotate in some way -->
 
 
-`f` is getting a bit more interesting. We have two _gc-points_, one when
-allocating the `Pt` to store in `a` and the second when allocating the `Pt`
-to store in `b`.
+`f` is getting a bit more interesting. We have two _gc-points_,
+one when allocating the first `Pt` struct,
+the address of which we store in `a`,
+and the second when allocating the second `Pt` struct,
+address stored in `b`.
 ```
 fn f() -> int {
     let a: *Pt = new Pt {1, 2};
@@ -293,7 +302,11 @@ fn f() -> int {
 ```
 
 
+As we perform semantic analysis of the program we maintain a chain of scopes
+while traversing the AST.
 We can follow the evolution of our scope chain as we analyse function `f`.
+
+
 ```
                  ->           ->                ->          ->
   upon entering f   gc-point 1      bind a        gc-point 2       bind b
@@ -309,14 +322,16 @@ We can follow the evolution of our scope chain as we analyse function `f`.
 
 We can ignore the root scope which contains all the function, type and global
 variable definitions as these will not live on the stack.
-
 At _gc-point_ 1 there are no _defined-variables_ and at _gc-point_ 2 only `a`
 has come into scope.
 
 
-As we analyse our program each variable is given an id in order to distiguish
-variables of the same name without needing to keep the scoping information
-around.
+<!-- talk about future AST traversals? -->
+Also during semantic analysis,
+each variable is given an id to distinguish it from other
+variables of the same name but appearing in different scopes.
+This has the advantage of allowing later passes not to need to concern
+themselves with the scoping rules.
 
 ```
 +---------+--------+
@@ -332,10 +347,12 @@ around.
 +---------+--------+
 ```
 
-A succinct way to pass along this information might be to use a bitmap
-but since we don't know how many variables we'll run into, we can pass along
-our _defined-variables_ by attaching an array of these variable IDs to the
-AST node. In some imaginable pretty printing of our AST, this might look like:
+A succinct way to pass along the _defined-variables_ information
+might be to use a bitmap
+but since we don't know how many variables we'll run into,
+we can pass along our _defined-variables_ by attaching an array of these
+variable IDs to the AST node.
+In some imaginable pretty printing of our AST, it might look like this:
 
 ```
 Body([
@@ -389,8 +406,8 @@ end of comment
 -->
 
 
-When way create the layout of the activation record, we use
-the type information to store a pointer map relating to each variable
+When we lay out the activation record,
+we use the type information to create a pointer map for each variable
 in the frame.
 
 ```
@@ -403,19 +420,27 @@ in the frame.
 +-------+------+-----------+----+--------+-------------+
 ```
 
-We delay generation of the frame map for each gc-point until we translate
+In our example here, `a` and `b` are simple single-word variables but it's
+also possible to define structs that contain multiple pointers and to store
+those on the stack.
+For example, `struct Node { value: int, left: *Node, right: *Node }` would
+have a pointer map with least significant bits `0b110`.
+<!-- Give examples of types with more interesting pointer maps? -->
+
+
+We delay generation of a frame map for each gc-point until we translate
 the AST into the IR (intermediate representation), this saves us needing to
 store the _defined-vars_ on each CALL instruction in the IR but also saves
 the need for attaching the pointer map to the AST node. (It may be possible
-to delay this even until instruction selection.)
+to delay this further, until instruction selection.)
 
-The pointer maps for all defined variables are combined together when
-translating the call/new expression to create a _locals bitmap_ for the
-local variables area of the frame.
-
-We've elided it here, but there may also be arguments passed on the stack.
-In this case, an _arguments bitmap_ for the area north of the frame pointer
-will also be created.
+The pointer maps for _defined_ variables are combined together when
+translating the call / new expression to create a _locals bitmap_
+which describes
+local variables area of the frame i.e. which words contain live pointers
+when the _gc-point_ is reached, marked with a 1 bit, and which words
+contain something else e.g. some integer value or junk from previous
+function invocations, marked with a 0 bit.
 
 ```
 +----------------+                                  ·+
@@ -433,17 +458,22 @@ will also be created.
                             gc-point 1  gc-point 2
 ```
 
+We've elided it here but there may also be arguments passed on the stack.
+In such case, an _arguments bitmap_ for the area north of the frame pointer
+will also be created.
 
 <!--
 
     talk about the saving of the frame maps, with their instruction
 -->
 
-During instruction selection, we emit a label after each function call.
-In the final assembly it looks like these shown additions. `sl_alloc_des` is
-our allocation function. `Lret4` labels the `mov` instruction directly after
-the first call to `sl_alloc_des` and `Lret5` the `mov` instruction directly
-after the second.
+During instruction selection we emit a label after each function call.
+In the final assembly it looks like the additions shown in the following
+snippet.
+(The lines prefixed with '+').
+`sl_alloc_des` is our allocation function.
+`Lret4` labels the `mov` instruction directly after the first call to
+`sl_alloc_des` and `Lret5` the `mov` instruction directly after the second.
 
 ```diff
  	.globl	_f
@@ -492,8 +522,11 @@ We store those labels along with the frame maps as fragments that get emitted
 after the code in the data segment.
 
 The maps are linked together and given a well-known name for the GC to find.
-For `f` alone, this could look something like the following.
-Fields related to details we'll talk about next time have been omitted.
+In the case of structlang, `sl_rt_frame_maps`.
+For `f` alone, this could look something like the following snippet of arm64
+assembly.
+Here, fields related to spilled and callee-saved registers have been omitted.
+_As briefly hinted before, I hope to come back to those in a future article._
 
 ```
 	.section	__DATA,__const
