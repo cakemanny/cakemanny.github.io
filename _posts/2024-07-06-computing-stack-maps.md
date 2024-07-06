@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Computing stack maps
-date: 2023-04-01
+date: 2024-07-06
 ---
 
 You are a rank two compiler writer.
@@ -260,8 +260,8 @@ each _gc-point_.
 
 _gc-points_ occur at every function call and every use of the `new` operator.
 Why is that? `new` allocates memory for a struct, and so may require a
-collection to free up some space on the heap, and any function may also
-contain uses of `new`.
+collection to free up some space on the heap. Any function may also
+contain uses of `new`, so any call to one may also result in a collection.
 It may be possible rule out calls to leaf functions that don't use `new`
 but let's not worry about that for now.
 
@@ -347,12 +347,9 @@ themselves with the scoping rules.
 +---------+--------+
 ```
 
-A succinct way to pass along the _defined-variables_ information
-might be to use a bitmap
-but since we don't know how many variables we'll run into,
-we can pass along our _defined-variables_ by attaching an array of these
+We can pass along our _defined-variables_ by attaching an array of these
 variable IDs to the AST node.
-In some imaginable pretty printing of our AST, it might look like this:
+Were we to pretty print our AST, it might look like this:
 
 ```
 Body([
@@ -428,19 +425,20 @@ have a pointer map with least significant bits `0b110`.
 <!-- Give examples of types with more interesting pointer maps? -->
 
 
-We delay generation of a frame map for each gc-point until we translate
+We delay generation of a frame map for each _gc-point_ until we translate
 the AST into the IR (intermediate representation), this saves us needing to
 store the _defined-vars_ on each CALL instruction in the IR but also saves
-the need for attaching the pointer map to the AST node. (It may be possible
-to delay this further, until instruction selection.)
+the need for attaching the pointer map to the AST node.
+(It may also be possible to delay this further, until instruction selection).
 
 The pointer maps for _defined_ variables are combined together when
 translating the call / new expression to create a _locals bitmap_
-which describes
-local variables area of the frame i.e. which words contain live pointers
-when the _gc-point_ is reached, marked with a 1 bit, and which words
-contain something else e.g. some integer value or junk from previous
-function invocations, marked with a 0 bit.
+which describes local variables area of the frame
+i.e. which words of the frame contain live pointers
+when the _gc-point_ is reached, marked with a 1 bit,
+and which words contain something else
+e.g. some integer value or junk from previous function invocations,
+marked with a 0 bit.
 
 ```
 +----------------+                                  ·+
@@ -554,3 +552,41 @@ _sl_rt_frame_maps:
 	.quad	Lptrmap1
 ```
 
+
+<!--
+
+Parse -> Semantic Analysis -> Frame Layout -> Translation to IR
+-> Instruction Selection ->
+-> Register Allocation
+-> Assembly Emission
+
+-->
+
+So what we can see is that adapting the compiler to produce code
+that supports garbage collection requires making adjustments
+at almost every stage of the compilation process.
+
+```
+
+        +-------+    +----------+    +--------+    +-----------+
+        |       |    |          |    |        |    |           |
+        | Parse | -> | Semantic | -> | Frame  | -> | Translate |--+
+        |       |    | Analysis |    | Layout |    |   to IR   |  |
+        +-------+    +----------+    +--------+    +-----------+  |
+                                                                  |
+                      determine      per variable      combine    |
+                   defined-variables   pointer        to frame    |
+                                        maps            maps      |
+                                                                  |
+          +-------------------------------------------------------+
+          |
+          |  +-------------+    +------------+    +----------+
+          |  |             |    |            |    |          |
+          +->| Instruction | -> |  Register  | -> |   Emit   |
+             |  Selection  |    | Allocation |    | Assembly |
+             +-------------+    +------------+    +----------+
+
+              label return            ;)           link frames
+                addresses                          map in data
+                                                    segment
+```
