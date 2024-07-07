@@ -590,3 +590,13 @@ at almost every stage of the compilation process.
                 addresses                          map in data
                                                     segment
 ```
+
+<!--
+
+Related writings
+
+- On the implementation of Algol: https://ir.cwi.nl/pub/18491/18491A.pdf
+- Compiler Support for Garbage Collection in a Statically Typed Language
+  https://dl.acm.org/doi/pdf/10.1145/143103.143140
+
+-->
